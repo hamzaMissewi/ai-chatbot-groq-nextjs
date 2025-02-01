@@ -5,7 +5,7 @@ const systemPrompt =
   "Your system prompt here. E.g: You are a friendly and knowledgeable academic assistant. Your role is to help users with anything related to academics,";
 
 export async function POST(req) {
-  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     systemInstruction: systemPrompt,
