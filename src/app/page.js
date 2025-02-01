@@ -1,101 +1,176 @@
-import Image from "next/image";
+'use client'
+import React, { useEffect, useRef, useState } from 'react';
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
+import { Send, Bot, User } from "lucide-react";
+import ReactMarkdown from 'react-markdown';
 
-export default function Home() {
+const ChatInterface = () => {
+  const [messages, setMessages] = useState([
+    {
+      role: "model",
+      parts: [{ text: "Hi, how can I be of assistance?" }],
+    },
+  ]);
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!message.trim() || isLoading) return;
+    setIsLoading(true);
+
+    setMessage("");
+    setMessages((messages) => [
+      ...messages,
+      { role: "user", parts: [{ text: message }] },
+      { role: "model", parts: [{ text: "" }] },
+    ]);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          history: [...messages],
+          msg: message,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Network response was not ok");
+
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const text = decoder.decode(value || new Uint8Array(), { stream: true });
+          fullResponse += text;
+          setMessages((messages) => {
+            const lastMessage = messages[messages.length - 1];
+            const otherMessages = messages.slice(0, messages.length - 1);
+            return [
+              ...otherMessages,
+              {
+                ...lastMessage,
+                parts: [{ text: fullResponse }],
+              },
+            ];
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      setMessages((messages) => [
+        ...messages,
+        {
+          role: "model",
+          parts: [{ text: "An error occurred, please try again later" }],
+        },
+      ]);
+    }
+    setIsLoading(false);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <Card className="w-full max-w-4xl h-[90vh] bg-slate-900 border-slate-800">
+        <CardContent className="h-full flex flex-col p-4 md:p-6">
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-slate-800 rounded-lg">
+                <Bot className="w-6 h-6 text-white md:w-8 md:h-8" />
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold text-white">Headstarter AI</h1>
+            </div>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          <ScrollArea className="flex-grow mb-4 pr-4">
+            <div className="space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex text-white items-start ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${
+                      message.role === "user" ? "flex-row-reverse" : "flex-row"
+                    }`}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-slate-800">
+                      {message.role === "user" ? (
+                        <User className="h-4 w-4" />
+                      ) : (
+                        <Bot className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div
+                      className={`rounded-lg px-4 py-3 ${
+                        message.role === "user"
+                          ? "bg-blue-600 text-white"
+                          : "bg-slate-800 text-slate-100"
+                      }`}
+                    >
+                      <div className="prose prose-invert max-w-none">
+                        <ReactMarkdown>{message.parts[0].text}</ReactMarkdown>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="flex gap-2 mt-auto">
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder="Type your message..."
+              className="min-h-[60px] text-white bg-slate-800 border-slate-700 focus:border-blue-500 resize-none"
+              disabled={isLoading}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Button
+              size="icon"
+              className="h-[60px] w-[60px] bg-blue-600 hover:bg-blue-700 transition-colors"
+              onClick={sendMessage}
+              disabled={!message.trim() || isLoading}
+            >
+              <Send className="h-4 w-4 text-white" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default ChatInterface;
