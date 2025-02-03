@@ -1,21 +1,21 @@
-'use client'
-import React, { useEffect, useRef, useState } from 'react';
+"use client";
+import React, { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Zap } from "lucide-react";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
     {
       role: "model",
-      parts: [{ text: "Hello! I'm ready to assist you. What would you like to explore today?" }],
-    },
+      parts: [{ text: "Hello! I'm ready to assist you. What would you like to explore today?" }]
+    }
   ]);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -33,7 +33,7 @@ const ChatInterface = () => {
     setMessages((messages) => [
       ...messages,
       { role: "user", parts: [{ text: message }] },
-      { role: "model", parts: [{ text: "" }] },
+      { role: "model", parts: [{ text: "" }] }
     ]);
 
     try {
@@ -42,8 +42,8 @@ const ChatInterface = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           history: [...messages],
-          msg: message,
-        }),
+          msg: message
+        })
       });
 
       if (!response.ok) throw new Error("Network response was not ok");
@@ -56,7 +56,7 @@ const ChatInterface = () => {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const text = decoder.decode(value || new Uint8Array(), { stream: true });
+          const text = decoder.decode(value || new Uint8Array([]), { stream: true });
           fullResponse += text;
           setMessages((messages) => {
             const lastMessage = messages[messages.length - 1];
@@ -65,8 +65,8 @@ const ChatInterface = () => {
               ...otherMessages,
               {
                 ...lastMessage,
-                parts: [{ text: fullResponse }],
-              },
+                parts: [{ text: fullResponse }]
+              }
             ];
           });
         }
@@ -77,8 +77,8 @@ const ChatInterface = () => {
         ...messages,
         {
           role: "model",
-          parts: [{ text: "Apologies, an unexpected error occurred. Please try again." }],
-        },
+          parts: [{ text: "Apologies, an unexpected error occurred. Please try again." }]
+        }
       ]);
     }
     setIsLoading(false);
@@ -99,7 +99,7 @@ const ChatInterface = () => {
             <div className="bg-[#4A4A4C] p-2 rounded-full">
               <Zap className="w-6 h-6 text-[#5E5CE6]" />
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-white">AI Companion</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-white">Aiden</h1>
           </div>
         </div>
 
@@ -118,7 +118,8 @@ const ChatInterface = () => {
                       message.role === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
-                    <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#3A3A3C]">
+                    <div
+                      className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#3A3A3C]">
                       {message.role === "user" ? (
                         <User className="h-5 w-5 text-[#5E5CE6]" />
                       ) : (
