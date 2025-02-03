@@ -1,42 +1,77 @@
-import { NextResponse } from "next/server";
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import Groq from 'groq-sdk';
 
-const systemPrompt =
-  "Your system prompt here. E.g: You are a friendly and knowledgeable academic assistant. Your role is to help users with anything related to academics,";
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY
+});
 
-export async function POST(req) {
-  const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: systemPrompt,
-  });
+const systemPrompt = 
+  "You are a friendly and knowledgeable academic assistant, " +
+  "coding assistant and a teacher of anything related to AI and Machine Learning. " +
+  "Your role is to help users with anything related to academics, " +
+  "provide detailed explanations, and support learning across various domains.";
 
-  const data = await req.json();
+export async function POST(request) {
+  try {
+    const { messages, msg } = await request.json();
 
-  const chat = model.startChat({
-    history: data.messages,
-  });
-
-  const result = await chat.sendMessageStream(data.msg);
-
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      try {
-        for await (const chunk of result.stream) {
-          const content = await chunk.text();
-          if (content) {
-            const text = encoder.encode(content);
-            controller.enqueue(text);
+    // Safely handle undefined or null messages
+    const processedMessages = messages && Array.isArray(messages) 
+      ? messages.reduce((acc, m) => {
+          if (m && m.parts && m.parts[0] && m.parts[0].text) {
+            acc.push({
+              role: m.role === "model" ? "assistant" : "user",
+              content: m.parts[0].text
+            });
           }
-        }
-      } catch (err) {
-        controller.error(err);
-      } finally {
-        controller.close();
-      }
-    },
-  });
+          return acc;
+        }, [])
+      : [];
 
-  return new NextResponse(stream);
+    const enhancedMessages = [
+      { role: "system", content: systemPrompt },
+      ...processedMessages,
+      { role: "user", content: msg }
+    ];
+
+    const stream = await groq.chat.completions.create({
+      messages: enhancedMessages,
+      model: "llama3-8b-8192", // Choose your preferred model
+      stream: true,
+      max_tokens: 1024,
+      temperature: 0.7,
+    });
+
+    // Create a custom readable stream to parse the chunks
+    const responseStream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        
+        try {
+          for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content;
+            
+            if (content) {
+              controller.enqueue(encoder.encode(content));
+            }
+          }
+        } catch (error) {
+          console.error("Streaming error:", error);
+          controller.error(error);
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(responseStream);
+  } catch (error) {
+    console.error("Error in chat API:", error);
+    return new Response(JSON.stringify({ 
+      error: "An error occurred processing your request",
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
 }

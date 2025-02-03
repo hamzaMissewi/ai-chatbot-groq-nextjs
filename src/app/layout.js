@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={grotesk.className}>
       <body
-        
+        className="bg-black"
       >
         {children}
       </body>

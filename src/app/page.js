@@ -3,15 +3,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent } from "@/components/ui/card";
-import { Send, Bot, User } from "lucide-react";
+import { Send, Bot, User, Zap } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 
 const ChatInterface = () => {
   const [messages, setMessages] = useState([
     {
       role: "model",
-      parts: [{ text: "Hi, how can I be of assistance?" }],
+      parts: [{ text: "Hello! I'm ready to assist you. What would you like to explore today?" }],
     },
   ]);
   const [message, setMessage] = useState("");
@@ -78,7 +77,7 @@ const ChatInterface = () => {
         ...messages,
         {
           role: "model",
-          parts: [{ text: "An error occurred, please try again later" }],
+          parts: [{ text: "Apologies, an unexpected error occurred. Please try again." }],
         },
       ]);
     }
@@ -93,24 +92,24 @@ const ChatInterface = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl h-[90vh] bg-slate-900 border-slate-800">
-        <CardContent className="h-full flex flex-col p-4 md:p-6">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-slate-800 rounded-lg">
-                <Bot className="w-6 h-6 text-white md:w-8 md:h-8" />
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold text-white">Headstarter AI</h1>
+    <div className="min-h-screen bg-[#1C1C1E] flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl bg-[#2C2C2E] rounded-2xl shadow-2xl border border-[#3A3A3C] overflow-hidden">
+        <div className="bg-[#3A3A3C] p-4 md:p-6 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="bg-[#4A4A4C] p-2 rounded-full">
+              <Zap className="w-6 h-6 text-[#5E5CE6]" />
             </div>
+            <h1 className="text-xl md:text-2xl font-bold text-white">AI Companion</h1>
           </div>
+        </div>
 
+        <div className="p-4 md:p-6 flex flex-col h-[75vh]">
           <ScrollArea className="flex-grow mb-4 pr-4">
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex text-white items-start ${
+                  className={`flex items-start ${
                     message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
@@ -119,18 +118,18 @@ const ChatInterface = () => {
                       message.role === "user" ? "flex-row-reverse" : "flex-row"
                     }`}
                   >
-                    <div className="flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-full bg-slate-800">
+                    <div className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#3A3A3C]">
                       {message.role === "user" ? (
-                        <User className="h-4 w-4" />
+                        <User className="h-5 w-5 text-[#5E5CE6]" />
                       ) : (
-                        <Bot className="h-4 w-4" />
+                        <Bot className="h-5 w-5 text-[#5E5CE6]" />
                       )}
                     </div>
                     <div
-                      className={`rounded-lg px-4 py-3 ${
+                      className={`rounded-2xl px-4 py-3 shadow-lg ${
                         message.role === "user"
-                          ? "bg-blue-600 text-white"
-                          : "bg-slate-800 text-slate-100"
+                          ? "bg-[#5E5CE6] text-white"
+                          : "bg-[#3A3A3C] text-white"
                       }`}
                     >
                       <div className="prose prose-invert max-w-none">
@@ -142,33 +141,33 @@ const ChatInterface = () => {
               ))}
               {isLoading && (
                 <div className="flex justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" />
+                  <div className="animate-pulse rounded-full h-8 w-8 bg-[#5E5CE6]" />
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
 
-          <div className="flex gap-2 mt-auto">
+          <div className="flex gap-3 mt-auto">
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               placeholder="Type your message..."
-              className="min-h-[60px] text-white bg-slate-800 border-slate-700 focus:border-blue-500 resize-none"
+              className="h-[40px] text-white bg-[#3A3A3C] border-gray-100 focus:border-blue-200 resize-none rounded-xl"
               disabled={isLoading}
             />
             <Button
               size="icon"
-              className="h-[60px] w-[60px] bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="h-[60px] w-[60px] bg-[#5E5CE6] hover:bg-[#4B3FD6] rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105"
               onClick={sendMessage}
               disabled={!message.trim() || isLoading}
             >
-              <Send className="h-4 w-4 text-white" />
+              <Send className="h-5 w-5 text-white" />
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
