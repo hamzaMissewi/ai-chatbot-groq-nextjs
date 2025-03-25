@@ -1,6 +1,8 @@
 import Groq from "groq-sdk";
 import wxflows from "@wxflows/sdk/langchain";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { NextRequest } from "next/server";
+import { FreeLLModelsEnum } from "@/lib/types";
 
 const groq = new Groq({
   // apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY
@@ -13,7 +15,8 @@ const systemPrompt =
   "Your role is to help users with anything related to academics, " +
   "provide detailed explanations, and support learning across various domains.";
 
-export async function POST(request) {
+// TODO for ibm wxflows agent tools
+export async function POST(request: NextRequest) {
   try {
     const { messages, msg } = await request.json();
 
@@ -51,10 +54,7 @@ export async function POST(request) {
 
     const stream = await groq.chat.completions.create({
       messages: enhancedMessages,
-      // model: "mixtral-8x7b-32768",
-      // model: "deepseek-ai/deepseek-llm-67b-chat",
-      // model: "llama3-8b-8192", // Choose your preferred model
-      model: "deepseek-r1-distill-qwen-32b",
+      model: FreeLLModelsEnum.llama3,
       stream: true,
       max_tokens: 1024,
       temperature: 0.7,

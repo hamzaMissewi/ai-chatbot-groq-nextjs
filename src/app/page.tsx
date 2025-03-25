@@ -29,7 +29,7 @@ export default function LandingPage() {
 
         {/* CTA Button */}
         <SignedIn>
-          <Link href="/chat">
+          <Link href="/dashboard">
             <button
               className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-medium text-white bg-gradient-to-r from-gray-900 to-gray-800 rounded-full hover:from-gray-800 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5">
               Get Started
@@ -43,8 +43,8 @@ export default function LandingPage() {
         <SignedOut>
           <SignInButton
             mode="modal"
-            fallbackRedirectUrl={"/chat"}
-            forceRedirectUrl={"/chat"}
+            fallbackRedirectUrl={"/dashboard"}
+            forceRedirectUrl={"/dashboard"}
           >
             <button
               className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-medium text-white bg-gradient-to-r from-gray-900 to-gray-800 rounded-full hover:from-gray-800 hover:to-gray-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5">

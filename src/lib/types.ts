@@ -1,4 +1,4 @@
-import { Id } from "@/convex/_generated/dataModel";
+import { Id } from "../../convex/_generated/dataModel";
 
 // SSE Constants
 export const SSE_DATA_PREFIX = "data: " as const;
@@ -65,9 +65,16 @@ export type StreamMessage =
 
 export interface ChatRequestBody {
   messages: Message[];
-  // newMessage: string;
   msg: string;
-  chatId?: Id<"chats">;
+  chatId: Id<"chats">;
+  // newMessage: string;
+  // chatId?: Id<"chats">;
 }
 
 
+export enum FreeLLModelsEnum {
+  llama3 = "llama3-8b-8192",
+  deepseek = "deepseek-r1-distill-qwen-32b",
+  //  "deepseek-ai/deepseek-llm-67b-chat",
+  mixtral = "mixtral-8x7b-32768",
+}

@@ -9,12 +9,13 @@ const grotesk = Space_Grotesk({
 
 
 export const metadata = {
-  title: "Aiden🚀",
-  description: "An AI chatbot for recommending how to study and build LLM's"
+  title: "Hamza Chatbot🚀",
+  description: "An AI chatbot using Langchain, groq and Deepseek R1 LLM"
 };
 
-export default function RootLayout({ children }) {
+export default function RootLayout({ children }: { children: Readonly<React.ReactNode> }) {
   return (
+    // <ConvexAuthNextjsServerProvider>
     <ConvexClientProvider>
       <html lang="en" className={grotesk.className}>
       <head>
@@ -23,7 +24,7 @@ export default function RootLayout({ children }) {
 
       </head>
       <body
-        className="bg-black"
+        // className="bg-black"
       >
       {children}
       </body>

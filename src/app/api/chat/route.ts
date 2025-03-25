@@ -1,7 +1,15 @@
 import Groq from "groq-sdk";
-import { ChatRequestBody, SSE_DATA_PREFIX, SSE_LINE_DELIMITER, StreamMessage, StreamMessageType } from "@/lib/types";
+import {
+  ChatRequestBody,
+  FreeLLModelsEnum,
+  SSE_DATA_PREFIX,
+  SSE_LINE_DELIMITER,
+  StreamMessage,
+  StreamMessageType
+} from "@/lib/types";
 import { getConvexClient } from "@/lib/convex";
 import { api } from "../../../../convex/_generated/api";
+// import { mutation } from "../../../../convex/_generated/server";
 
 
 const groq = new Groq({
@@ -37,20 +45,20 @@ export async function POST(request) {
 
     // HAMZA INIT
     // Create stream with larger queue strategy for better performance
-    const streamInit = new TransformStream({}, { highWaterMark: 1024 });
+    // const streamInit = new TransformStream({}, { highWaterMark: 1024 });
+    // const writer = streamInit.writable.getWriter();
+    // // Send initial connection established message
+    // await sendSSEMessage(writer, { type: StreamMessageType.Connected });
 
-    const writer = streamInit.writable.getWriter();
-    // Send initial connection established message
-    await sendSSEMessage(writer, { type: StreamMessageType.Connected });
+    // if (chatId) {
+    const convex = getConvexClient();
+    // Send user message to Convex
+    // await mutation(api.messages.send, {
+    await convex.mutation(api.messages.send, {
+      chatId,
+      content: msg
+    });
 
-    if (chatId) {
-      const convex = getConvexClient();
-      // Send user message to Convex
-      await convex.mutation(api.messages.send, {
-        chatId,
-        content: msg
-      });
-    }
 
     // Safely handle undefined or null messages
     const processedMessages = messages && Array.isArray(messages)
@@ -73,8 +81,7 @@ export async function POST(request) {
 
     const stream = await groq.chat.completions.create({
       messages: enhancedMessages,
-      // model: "llama3-8b-8192", // Choose your preferred model
-      model: "deepseek-r1-distill-qwen-32b",
+      model: FreeLLModelsEnum.llama3,
       stream: true,
       max_tokens: 1024,
       temperature: 0.7
