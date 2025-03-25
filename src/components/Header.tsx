@@ -20,8 +20,10 @@ export default function Header() {
           >
             <HamburgerMenuIcon className="h-5 w-5" />
           </Button>
-          <div className="font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
-            Chat with an AI Agent
+          <div
+            className="font-semibold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent cursor-pointer shadow-md shado-none hover:shadow-violet-800 px-2 tracking-wide text-lg"
+            onClick={() => setIsMobileNavOpen(prev => !prev)}>
+            Hamza Chatbot
           </div>
         </div>
         <div className="flex items-center">

@@ -4,11 +4,11 @@ import {
   FreeLLModelsEnum,
   SSE_DATA_PREFIX,
   SSE_LINE_DELIMITER,
-  StreamMessage,
-  StreamMessageType
+  StreamMessage
 } from "@/lib/types";
 import { getConvexClient } from "@/lib/convex";
 import { api } from "../../../../convex/_generated/api";
+import { SYSTEM_MESSAGE } from "@/lib/systemMessage";
 // import { mutation } from "../../../../convex/_generated/server";
 
 
@@ -16,11 +16,11 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY
 });
 
-const systemPrompt =
-  "You are a friendly and knowledgeable academic assistant, " +
-  "coding assistant and a teacher of anything related to AI and Machine Learning. " +
-  "Your role is to help users with anything related to academics, " +
-  "provide detailed explanations, and support learning across various domains.";
+// const systemPrompt =
+//   "You are a friendly and knowledgeable academic assistant, " +
+//   "coding assistant and a teacher of anything related to AI and Machine Learning. " +
+//   "Your role is to help users with anything related to academics, " +
+//   "provide detailed explanations, and support learning across various domains.";
 
 
 // Hamza function
@@ -50,10 +50,7 @@ export async function POST(request) {
     // // Send initial connection established message
     // await sendSSEMessage(writer, { type: StreamMessageType.Connected });
 
-    // if (chatId) {
     const convex = getConvexClient();
-    // Send user message to Convex
-    // await mutation(api.messages.send, {
     await convex.mutation(api.messages.send, {
       chatId,
       content: msg
@@ -74,7 +71,7 @@ export async function POST(request) {
       : [];
 
     const enhancedMessages = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: SYSTEM_MESSAGE },
       ...processedMessages,
       { role: "user", content: msg }
     ];
@@ -86,6 +83,9 @@ export async function POST(request) {
       max_tokens: 1024,
       temperature: 0.7
     });
+
+    // const response = stream.invoke(messages);
+    // console.log("response", response);
 
     // Create a custom readable stream to parse the chunks
     const responseStream = new ReadableStream({
@@ -108,6 +108,7 @@ export async function POST(request) {
         }
       }
     });
+
 
     return new Response(responseStream);
   } catch (error) {

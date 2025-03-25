@@ -1,28 +1,24 @@
 import Groq from "groq-sdk";
-import { ChatRequestBody, FreeLLModelsEnum } from "@/lib/types";
-import { getConvexClient } from "@/lib/convex";
-import { api } from "@/convex/_generated/api";
-import { SYSTEM_MESSAGE } from "@/lib/systemMessage";
-// import { mutation } from "../../../../convex/_generated/server";
+import wxflows from "@wxflows/sdk/langchain";
+import { ToolNode } from "@langchain/langgraph/prebuilt";
+import { NextRequest } from "next/server";
+import { FreeLLModelsEnum } from "@/lib/types";
 
 const groq = new Groq({
+  // apiKey: process.env.NEXT_PUBLIC_GROQ_API_KEY
   apiKey: process.env.GROQ_API_KEY
 });
 
+const systemPrompt =
+  "You are a friendly and knowledgeable academic assistant, " +
+  "coding assistant and a teacher of anything related to AI and Machine Learning. " +
+  "Your role is to help users with anything related to academics, " +
+  "provide detailed explanations, and support learning across various domains.";
 
-export async function POST(request) {
-
-
+// TODO for ibm wxflows agent tools
+export async function POST(request: NextRequest) {
   try {
-    const { messages, msg, chatId } = (await request.json()) as ChatRequestBody;
-
-
-    const convex = getConvexClient();
-    await convex.mutation(api.messages.send, {
-      chatId,
-      content: msg
-    });
-
+    const { messages, msg } = await request.json();
 
     // Safely handle undefined or null messages
     const processedMessages = messages && Array.isArray(messages)
@@ -37,12 +33,23 @@ export async function POST(request) {
       }, [])
       : [];
 
-
     const enhancedMessages = [
-      { role: "system", content: SYSTEM_MESSAGE },
+      { role: "system", content: systemPrompt },
       ...processedMessages,
       { role: "user", content: msg }
     ];
+
+
+    // Connect to wxflows
+    const toolClient = new wxflows({
+      endpoint: process.env.WXFLOWS_ENDPOINT || "",
+      apikey: process.env.WXFLOWS_APIKEY
+    });
+
+
+// Retrieve the tools
+    const tools = await toolClient.lcTools;
+    const toolNode = new ToolNode(tools);
 
 
     const stream = await groq.chat.completions.create({
@@ -50,9 +57,9 @@ export async function POST(request) {
       model: FreeLLModelsEnum.llama3,
       stream: true,
       max_tokens: 1024,
-      temperature: 0.7
+      temperature: 0.7,
+      tools
     });
-
 
     // Create a custom readable stream to parse the chunks
     const responseStream = new ReadableStream({
@@ -75,7 +82,6 @@ export async function POST(request) {
         }
       }
     });
-
 
     return new Response(responseStream);
   } catch (error) {

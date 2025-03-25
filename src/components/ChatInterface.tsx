@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Bot, Send, User, Zap } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -10,31 +10,46 @@ import { getConvexClient } from "@/lib/convex";
 import { api } from "@/convex/_generated/api";
 import { toast } from "sonner";
 
-const formatToolOutput = (output: unknown): string => {
-  if (typeof output === "string") return output;
-  return JSON.stringify(output, null, 2);
+// const formatToolOutput = (output: unknown): string => {
+//   if (typeof output === "string") return output;
+//   return JSON.stringify(output, null, 2);
+// };
+
+// const formatTerminalOutput = (
+//   tool: string,
+//   input: unknown,
+//   output: unknown
+// ) => {
+//   const terminalHtml = `<div class="bg-[#1e1e1e] text-white font-mono p-2 rounded-md my-2 overflow-x-auto whitespace-normal max-w-[600px]">
+//       <div class="flex items-center gap-1.5 border-b border-gray-700 pb-1">
+//         <span class="text-red-500">●</span>
+//         <span class="text-yellow-500">●</span>
+//         <span class="text-green-500">●</span>
+//         <span class="text-gray-400 ml-1 text-sm">~/${tool}</span>
+//       </div>
+//       <div class="text-gray-400 mt-1">$ Input</div>
+//       <pre class="text-yellow-400 mt-0.5 whitespace-pre-wrap overflow-x-auto">${formatToolOutput(input)}</pre>
+//       <div class="text-gray-400 mt-2">$ Output</div>
+//       <pre class="text-green-400 mt-0.5 whitespace-pre-wrap overflow-x-auto">${formatToolOutput(output)}</pre>
+//     </div>`;
+//
+//   return `---START---\n${terminalHtml}\n---END---`;
+// };
+
+const formatMessage = (content: string): string => {
+  // First unescape backslashes
+  content = content.replace(/\\\\/g, "\\");
+
+  // Then handle newlines
+  content = content.replace(/\\n/g, "\n");
+
+  // Remove only the markers but keep the content between them
+  content = content.replace(/---START---\n?/g, "").replace(/\n?---END---/g, "");
+
+  // Trim any extra whitespace that might be left
+  return content.trim();
 };
 
-const formatTerminalOutput = (
-  tool: string,
-  input: unknown,
-  output: unknown
-) => {
-  const terminalHtml = `<div class="bg-[#1e1e1e] text-white font-mono p-2 rounded-md my-2 overflow-x-auto whitespace-normal max-w-[600px]">
-      <div class="flex items-center gap-1.5 border-b border-gray-700 pb-1">
-        <span class="text-red-500">●</span>
-        <span class="text-yellow-500">●</span>
-        <span class="text-green-500">●</span>
-        <span class="text-gray-400 ml-1 text-sm">~/${tool}</span>
-      </div>
-      <div class="text-gray-400 mt-1">$ Input</div>
-      <pre class="text-yellow-400 mt-0.5 whitespace-pre-wrap overflow-x-auto">${formatToolOutput(input)}</pre>
-      <div class="text-gray-400 mt-2">$ Output</div>
-      <pre class="text-green-400 mt-0.5 whitespace-pre-wrap overflow-x-auto">${formatToolOutput(output)}</pre>
-    </div>`;
-
-  return `---START---\n${terminalHtml}\n---END---`;
-};
 
 interface ChatInterfaceProps {
   chatId: Id<"chats">;
@@ -74,7 +89,7 @@ function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
     setMessage("");
     setMessages((messages) => [
       ...messages,
-      { role: "user", content: message, chatId }
+      { role: "user", content: message }
       // { role: "user", parts: [{ text: message }] },
       // { role: "model", parts: [{ text: "" }] }
       // { role: "model", content: "" }
@@ -104,6 +119,8 @@ function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
         while (true) {
           const { done, value } = await reader.read();
           if (done) {
+            console.log("full response", fullResponse);
+
             await convex.mutation(api.messages.store, {
               chatId,
               content: fullResponse,
@@ -155,7 +172,7 @@ function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
 
   return (
     <div className="min-h-screen bg-[#1C1C1E] flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-[#2C2C2E] rounded-2xl shadow-2xl border border-[#3A3A3C] overflow-hidden">
+      <div className="max-w-4xl rounded-2xl shadow-2xl border border-[#3A3A3C] ">
         <div className="bg-[#3A3A3C] p-4 md:p-6 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <div className="bg-[#4A4A4C] p-2 rounded-full">
@@ -171,36 +188,48 @@ function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
               {messages.map((message, index) => (
                 <div
                   key={index}
-                  className={`flex items-start ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
+                  className={"w-full"}
                 >
-                  <div
-                    className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${
-                      message.role === "user" ? "flex-row-reverse" : "flex-row"
+                  {/*max-w-[95%] md:max-w-[85%]*/}
+                  {/*  <div*/}
+                  <ScrollArea
+                    className={`flex w-full relative items-start ${
+                      message.role === "user" ? "justify-end" : "justify-start"
                     }`}
+                    // className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${
                   >
                     <div
-                      className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#3A3A3C]">
-                      {message.role === "user" ? (
-                        <User className="h-5 w-5 text-[#5E5CE6]" />
-                      ) : (
-                        <Bot className="h-5 w-5 text-[#5E5CE6]" />
-                      )}
-                    </div>
-                    <div
-                      className={`rounded-2xl px-4 py-3 shadow-lg ${
-                        message.role === "user"
-                          ? "bg-[#5E5CE6] text-white"
-                          : "bg-[#3A3A3C] text-white"
+                      className={`flex gap-3 ${
+                        message.role === "user" ? "flex-row-reverse max-w-[85%] md:max-w-[75%]" : "flex-row"
                       }`}
                     >
-                      <div className="prose prose-invert max-w-none">
-                        {/*<ReactMarkdown>{message.parts[0].text}</ReactMarkdown>*/}
-                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      <div
+                        className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-[#3A3A3C] mt-1">
+                        {message.role === "user" ? (
+                          <User className="h-5 w-5 text-[#5E5CE6]" />
+                        ) : (
+                          <Bot className="h-5 w-5 text-[#5E5CE6]" />
+                        )}
+                      </div>
+                      <div
+                        className={`rounded-2xl  px-4 py-3 shadow-lg ${
+                          message.role === "user"
+                            ? "bg-[#5E5CE6] text-white"
+                            : "bg-[#3A3A3C] text-white"
+                        }`}
+                      >
+                        <div className="prose prose-invert max-w-none">
+                          {/*<ReactMarkdown>{message.parts[0].text}</ReactMarkdown>*/}
+                          <ScrollArea className={"w-[80%]"}>
+                            <ReactMarkdown>{formatMessage(message.content)}</ReactMarkdown>
+                            <ScrollBar orientation={"horizontal"} className={"w-full"} />
+                          </ScrollArea>
+                          {/*<div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />*/}
+                        </div>
                       </div>
                     </div>
-                  </div>
+                    <ScrollBar orientation={"horizontal"} />
+                  </ScrollArea>
                 </div>
               ))}
               {isLoading && (
@@ -210,6 +239,7 @@ function ChatInterface({ chatId, initialMessages }: ChatInterfaceProps) {
               )}
               <div ref={messagesEndRef} />
             </div>
+            <ScrollBar orientation={"vertical"} className={"h-full"} />
           </ScrollArea>
 
           <div className="flex gap-3 mt-auto">
