@@ -1,0 +1,47 @@
+what are the free certifications and new trending languages as a web developer work with typescript and react to find a job offer
+
+¨PROMPT
+give me a system prompt example for an ia assisant to make good in answering coding questions and general subjects
+
+
+Question UPLOAD DOCUMENTS CHATBOT
+i want to create ai chatbot nextjs app that allow user to upload document files and add it in chat to ask his question using langchain ai usechat and convex to save documents used in case there is a submit of send message
+
+
+
+i got error here in import for this code >>>
+
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+ const splitter = RecursiveCharacterTextSplitter.fromLanguage("markdown", {
+      chunkSize: 256,
+      chunkOverlap: 20,
+    });
+how to fix this import or do it differently ?
+
+
+i want to add a styled payment page of choosing a plan for user to upgrade to pro or pro+ features to use advanced llms/ai models and use stripe api for payment method
+
+
+**************************
+prompt for BLACKBOX AI (APP BUILDER)
+clone the following website, use the browser to scroll through the website page and see all the website content especially the cursor flame effection (webgl simulation fluid ) in contact section:  https://www2.b2b-alive.com/
+
+focus only on the cursor flame cursor animation on the website, i want the same effect in a nextjs app
+
+
+
+
+how to optimize cursor loading time, it take so long to search for file or rename files
+
+
+en PROMPT  
+#  => title
+## => subtitle
+- => régle
+
+
+create me a nextjs application latest version, about ia chatbot allow user to use free ai api LLMs (deepseek, openai, claude, llama, gemini, etc) , the key here i need one api for free allow me to use different llms, and i want to add tools for the model and config agent if possible 
+
+create me a custom hook for changing clerk user avatar and use it when open clerk user config menu and save the new user data on convex
+
+how to update clerk userbutton menu , add new item line for update user avatar

@@ -9,15 +9,15 @@ interface NavigationContextType {
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function NavigationProvider({
-                                     children
-                                   }: {
+  children,
+}: {
   children: React.ReactNode;
 }) {
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(true);
 
   const closeMobileNav = () => setIsMobileNavOpen(false);
 

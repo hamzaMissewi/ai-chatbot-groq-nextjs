@@ -1,102 +1,193 @@
-import { MessagesAnnotation, START, StateGraph } from "@langchain/langgraph/index";
-import { ChatPromptTemplate, MessagesPlaceholder, PromptTemplate } from "@langchain/core/prompts";
-import { SSE_DATA_PREFIX, SSE_LINE_DELIMITER, StreamMessage, StreamMessageType } from "@/lib/types";
-import { SystemMessage } from "@langchain/core/messages";
-import { getDefaultPromptChat } from "@/lib/systemMessage";
-import wxflows from "@wxflows/sdk/dist/lib/langchain";
-import { ToolNode } from "@langchain/langgraph/prebuilt";
+import "server-only";
+import {
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  SystemMessage,
+  trimMessages,
+} from "@langchain/core/messages";
+import { MessagesAnnotation, START, StateGraph } from "@langchain/langgraph";
+import { getDefaultPromptChat } from "@/prompt/systemMessage";
+import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from "@langchain/core/prompts";
+import { END, MemorySaver } from "@langchain/langgraph";
+import { Id } from "@/convex/_generated/dataModel";
+import { ChatGroq } from "@langchain/groq";
+import Groq from "groq-sdk";
+import { FreeLLModelsEnum } from "./types";
+// import { ToolNode } from "@langchain/langgraph/prebuilt";
+// import wxflows from "@wxflows/sdk/langchain";
 
-
-// const systemPrompt =
-//   "You are a friendly and knowledgeable academic assistant, " +
-//   "coding assistant and a teacher of anything related to AI and Machine Learning. " +
-//   "Your role is to help users with anything related to academics, " +
-//   "provide detailed explanations, and support learning across various domains.";
-
-
-// Hamza function
-async function sendSSEMessage(
-  writer: WritableStreamDefaultWriter<Uint8Array>,
-  data: StreamMessage
+export async function submitQuestionStream(
+  model: ChatGroq,
+  messages: BaseMessage[],
+  chatId: Id<"chats">,
 ) {
-  const encoder = new TextEncoder();
-  return writer.write(
-    encoder.encode(
-      `${SSE_DATA_PREFIX}${JSON.stringify(data)}${SSE_LINE_DELIMITER}`
-    )
-  );
-}
+  // Retrieve the tools
+  // const toolClient = new wxflows({
+  //   endpoint: process.env.WXFLOWS_ENDPOINT || "",
+  //   apikey: process.env.WXFLOWS_APIKEY,
+  // });
+  // const tools = await toolClient.lcTools;
+  // const toolNode = new ToolNode(tools);
 
+  const trimmer = trimMessages({
+    maxTokens: 10,
+    strategy: "last",
+    tokenCounter: (msgs) => msgs.length,
+    includeSystem: true,
+    allowPartial: false,
+    startOn: "human",
+  });
 
-export const initStream = async () => {
-  // HAMZA INIT
-  // Create stream with larger queue strategy for better performance
-  const streamInit = new TransformStream({}, { highWaterMark: 1024 });
-  const writer = streamInit.writable.getWriter();
-  // Send initial connection established message
-  await sendSSEMessage(writer, { type: StreamMessageType.Connected });
-};
+  const cachedMessages = addCachingHeaders(messages);
 
-
-// Connect to wxflows
-const toolClient = new wxflows({
-  endpoint: process.env.WXFLOWS_ENDPOINT || "",
-  apikey: process.env.WXFLOWS_APIKEY
-});
-
-
-// Retrieve the tools
-const tools = await toolClient.lcTools;
-
-// const toolNode = new ToolNode(tools);
-
-
-export const createWorkflow = (model: any) => {
-  // const model = initialiseModel();
-  const toolNode = new ToolNode(tools);
-
-  const stateGraph = new StateGraph(MessagesAnnotation)
+  const workflow = new StateGraph(MessagesAnnotation)
     .addNode("agent", async (state) => {
-      // create the system message content
-      // const systemContent = SYSTEM_MESSAGE;
-      const messageContent = getDefaultPromptChat();
+      // Create the system message content
+      const systemContent = getDefaultPromptChat();
 
-      const promptMessage = PromptTemplate.fromTemplate(messageContent);
-
-      // const outputParser = new HttpResponseOutputParser();
-      // const chain = promptMessage.pipe(model).pipe(outputParser);
-      // const stream = await chain.stream({
-      //   chat_history: formattedPreviousMessages.join("\n"),
-      //   input: currentMessageContent,
-      // });
-
-      //   create the prompt template
+      // Create the prompt template with system message and messages placeholder
       const promptTemplate = ChatPromptTemplate.fromMessages([
-        new SystemMessage(messageContent, {
-          cache_control: { type: "ephemeral" } // set a cache breakpoint (max number of breakpoints is 4)
+        new SystemMessage(systemContent, {
+          cache_control: { type: "ephemeral" },
         }),
-        new MessagesPlaceholder("messages") //new HumanMessage(message), // { human: "hi" },
+        new MessagesPlaceholder("messages"),
       ]);
 
-      //   trim the message to manage conversation history
-      // const trimmedMessages = await trimmer.invoke(state.messages);
-      // console.log("trimmed Messages", trimmedMessages);
+      // Trim the messages to manage conversation history
+      const trimmedMessages = await trimmer.invoke(state.messages);
 
       // Format the prompt with the current messages
-      const prompt = await promptTemplate.invoke({ message: state.messages });
+      const prompt = await promptTemplate.invoke({ messages: trimmedMessages });
 
       // Get response from the model
       const response = await model.invoke(prompt);
-      console.log("Model Response:", response);
       return { messages: [response] };
     })
+    // .addNode("tools", toolNode)
     .addEdge(START, "agent")
-    .addNode("tools", toolNode)
-    .addConditionalEdges("agent", shouldContinue)
-    .addEdge("tools", "agent");
+    .addConditionalEdges("agent", shouldContinue);
+  // .addEdge("tools", "agent");
 
-  // console.log("stateGraph", stateGraph);
-  return stateGraph;
+  // const workflow = createWorkflow();
+
+  // Create a checkpoint to save the state of the conversation
+  const checkpointer = new MemorySaver();
+  const app = workflow.compile({ checkpointer });
+
+  const stream = await app.streamEvents(
+    { messages: cachedMessages },
+    {
+      version: "v2",
+      configurable: { thread_id: chatId },
+      streamMode: "messages",
+      runId: chatId,
+    },
+  );
+
+  return stream;
+}
+
+function shouldContinue(state: typeof MessagesAnnotation.State) {
+  const messages = state.messages;
+  const lastMessage = messages[messages.length - 1] as AIMessage;
+
+  // If the LLM makes a tool call, then we route to the "tools" node
+  if (lastMessage.tool_calls?.length) {
+    return "tools";
+  }
+
+  // If the last message is a tool message, route back to agent
+  if (lastMessage.content && lastMessage._getType() === "tool") {
+    return "agent";
+  }
+
+  // Otherwise, we stop (reply to the user)
+  return END;
+}
+
+function addCachingHeaders(messages: BaseMessage[]): BaseMessage[] {
+  if (!messages.length) return messages;
+
+  // Create a copy of messages to avoid mutating the original
+  const cachedMessages = [...messages];
+
+  // Helper to add cache control
+  const addCache = (message: BaseMessage) => {
+    message.content = [
+      {
+        type: "text",
+        text: message.content as string,
+        cache_control: { type: "ephemeral" },
+      },
+    ];
+  };
+
+  // Cache the last message
+  // console.log("🤑🤑🤑 Caching last message");
+  addCache(cachedMessages.at(-1)!);
+
+  // Find and cache the second-to-last human message
+  let humanCount = 0;
+  for (let i = cachedMessages.length - 1; i >= 0; i--) {
+    if (cachedMessages[i] instanceof HumanMessage) {
+      humanCount++;
+      if (humanCount === 2) {
+        // console.log("🤑🤑🤑 Caching second-to-last human message");
+        addCache(cachedMessages[i]);
+        break;
+      }
+    }
+  }
+
+  return cachedMessages;
+}
+
+export const initialzeModel = async () => {
+  const model = new ChatGroq({
+    model: FreeLLModelsEnum.deepseek_llama,
+    temperature: 0,
+    maxTokens: 4096,
+    streaming: true, // stop:None,
+    apiKey: process.env.GROQ_API_KEY, // other params...
+    callbacks: [
+      {
+        handleLLMStart: async () => {
+          console.log("Starting LLM call");
+        },
+        handleLLMEnd: async (output) => {
+          console.log("End LLM call", output);
+          const usage = output.llmOutput?.usage;
+
+          console.log("llm end usage ", usage);
+
+          if (usage) {
+            console.log("token usage:", {
+              input_tokens: usage.input_tokens,
+              output_tokens: usage.output_tokens,
+            });
+          }
+        },
+      },
+    ],
+  }); //.bindTools(tools);
+
+  // const groq = new Groq({
+  //   apiKey: process.env.GROQ_API_KEY,
+  // });
+
+  // const stream = await groq.chat.completions.create({
+  //   messages: [],
+  //   model: "llama_v3",
+  //   stream: true,
+  //   max_tokens: 1024,
+  //   temperature: 0.7,
+  // });
+
+  // const response = await model.invoke(prompt);
+  // return { messages: [response] };
+  return model;
 };
-
-

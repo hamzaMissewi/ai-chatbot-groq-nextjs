@@ -1,0 +1,1 @@
+this folder contains routes of the other project named : "LANGCHAIN NEXTJS DEEPSEEK"
