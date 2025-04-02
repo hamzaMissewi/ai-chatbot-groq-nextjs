@@ -1,4 +1,4 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -9,7 +9,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const { priceId, planName } = await req.json();
+
     const user = await currentUser();
+    // const user = await auth();
 
     if (!user) {
       throw new Error("Unauthorized");

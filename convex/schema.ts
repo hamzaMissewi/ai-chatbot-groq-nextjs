@@ -20,11 +20,13 @@ export default defineSchema({
   messages: defineTable({
     chatId: v.id("chats"),
     content: v.string(),
+    // content: v.optional(v.string()),
     role: v.union(v.literal("user"), v.literal("assistant")),
     model: v.optional(v.string()), //v.optional(modelEnum),
     createdAt: v.number(),
   }).index("by_chat", ["chatId"]),
   subscriptions: defineTable({
+    // userId: v.id("users"),
     userId: v.string(),
     stripeSubscriptionId: v.string(),
     stripeCustomerId: v.string(),
@@ -32,6 +34,8 @@ export default defineSchema({
     // stripeCurrentPeriodEnd: v.optional(v.string()),
     stripeCurrentPeriodEnd: v.optional(v.number()),
     stripeCancelAtPeriodEnd: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    plan: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_user", ["userId"]),
   users: defineTable({

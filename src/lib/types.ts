@@ -9,7 +9,7 @@ export interface MessageInputType {
   role: MessageRole;
   content: string;
   model?: string;
-  parts?: { text: string }[];
+  // parts?: { text: string }[];
 }
 
 export enum StreamMessageType {

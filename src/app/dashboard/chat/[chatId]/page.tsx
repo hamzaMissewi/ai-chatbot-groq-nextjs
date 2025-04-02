@@ -37,16 +37,17 @@ async function ChatPage({ params }: ChatPageProps) {
     const initialMessages = await convex.query(api.messages.list, { chatId });
 
     return (
-      <div className="flex-1 overflow-hidden">
+      <div className="flex max-w-4xl flex-1">
         <ChatInterface
           chatId={chatId}
           chatTitle={chat.title}
           initialMessages={initialMessages}
         />
+        {/* <div className="mt-8 text-sm text-gray-500">Powered by Hamza Missaoui</div> */}
       </div>
     );
   } catch (error) {
-    console.error("🔥 Error loading chat:", error);
+    console.error("🔥Error loading chat:", error);
     redirect("/dashboard");
   }
 }

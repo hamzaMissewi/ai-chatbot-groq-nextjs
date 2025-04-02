@@ -30,13 +30,13 @@ export default function AgentsPage() {
             Functions model, then parses the output.
           </span>
         </li>
-        <li className="text-l hidden md:block">
+        {/* <li className="text-l hidden md:block">
           💻
           <span className="ml-2">
             You can find the prompt, model, and schema logic for this use-case
             in <code>app/api/chat/structured_output/route.ts</code>.
           </span>
-        </li>
+        </li> */}
         <li className="text-l hidden md:block">
           📊
           <span className="ml-2">

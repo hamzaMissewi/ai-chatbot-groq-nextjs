@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import { Button } from "../ui/button";
 import { ChatInput } from "./ChatWindow";
 import { cn } from "@/lib/cn";
+import { ScrollBar } from "../ui/scroll-area";
 
 const formatMessage = (content: string): string => {
   // First unescape backslashes
@@ -32,7 +33,7 @@ interface ChatInterfaceProps {
 export default function LangchainChatInterface({
   chatId,
   initialMessages,
-  chatTitle,
+  // chatTitle,
 }: ChatInterfaceProps) {
   const convex = getConvexClient();
   const [input, setInput] = useState("");
@@ -60,7 +61,6 @@ export default function LangchainChatInterface({
   };
 
   const sendMessage = async () => {
-    // if (!input.trim()) return;
     if (!input.trim() || isLoading) return;
 
     setInput("");
@@ -96,17 +96,16 @@ export default function LangchainChatInterface({
         content: data.response,
         role: "assistant",
         model: "deepseek_llama",
+        // model: FreeLLModelsEnum[],
         // llmModel
         //   ? getEnumKeyByValue(FreeLLModelsEnum, llmModel.toString())
-        //   : undefined, //
+        //   : undefined,
       });
 
       // if (response.body) {
       //   const reader = response.body.getReader();
       //   const decoder = new TextDecoder();
       //   let fullResponse = "";
-      //
-      //
       //   while (true) {
       //     const { done, value } = await reader.read();
       //     if (done) {
@@ -152,12 +151,11 @@ export default function LangchainChatInterface({
   };
 
   return (
-    <div className="mx-auto max-w-2xl p-4">
+    <div className="mx-auto p-4">
       <div className="mb-4 h-96 overflow-y-auto rounded-lg border p-4">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500">
             Start new conversation with Hamza AI
-            {/*{chatTitle}*/}
           </div>
         ) : (
           messages.map((message, index) => (
@@ -176,13 +174,14 @@ export default function LangchainChatInterface({
               >
                 {/* <div className={"prose prose-invert max-w-none w-full"}> */}
                 {/* <ReactMarkdown className={cn("w-full h-fit text-justify",message.role==="user" ? "text-white bg-blue-800":"text-black")}> */}
-                <ReactMarkdown className={cn("h-fit w-full text-justify")}>
-                  {formatMessage(message.content)}
+                <ReactMarkdown
+                  className={
+                    "prose prose-invert h-fit w-full max-w-none text-justify"
+                  }
+                >
+                  {message?.content && formatMessage(message.content)}
                 </ReactMarkdown>
-                {/* <ScrollBar
-                          orientation={"horizontal"}
-                          className={"w-full"}
-                        /> */}
+                {/* <ScrollBar orientation={"horizontal"} className={"w-full"} /> */}
               </div>
             </div>
           ))

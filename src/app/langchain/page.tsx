@@ -51,7 +51,6 @@ export default function Home() {
         <li className="text-l">
           👇
           <span className="ml-2">
-            {/*Try asking e.g. <code>What is the course about?</code> below!*/}
             Try asking for example <code>What is NextJs Framework?</code> below!
           </span>
         </li>

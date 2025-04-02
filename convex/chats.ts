@@ -1,22 +1,45 @@
+import { FreeLLModelsEnum } from "./../src/lib/types";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 export const createChat = mutation({
   args: {
     title: v.string(),
+    initializeMessage: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) {
       throw new Error("Not authenticated");
     }
-    const chat = await ctx.db.insert("chats", {
+    const chatId = await ctx.db.insert("chats", {
       title: args.title,
       userId: identity.subject,
       createdAt: Date.now(),
     });
 
-    return chat;
+    // const chat = await ctx.db.get(args.chatId);
+    // if (!chat) {
+    //   throw new Error("Unauthorized");
+    // }
+
+    if (chatId && args.initializeMessage) {
+      // Save the user message with preserved newlines
+      const messageId = await ctx.db.insert("messages", {
+        chatId: chatId,
+        content: `Hello ${identity.address}, How can i help you today ?`,
+        role: "assistant",
+        // model: FreeLLModelsEnum.deepseek_llama,
+        createdAt: Date.now(),
+      });
+
+      console.log("✅ Saved user message:", {
+        messageId,
+        //   chatId,
+      });
+    }
+
+    return chatId;
   },
 });
 

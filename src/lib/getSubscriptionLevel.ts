@@ -7,12 +7,13 @@ import type { SubscriptionLevel } from "./types";
 export const getUserSubscriptionLevel = cache(
   async (userId: string): Promise<SubscriptionLevel | undefined> => {
     try {
-      // const subscription = await prisma.userSubscription.findUnique({
       const convex = await getConvexClient();
       const subscription = await convex.query(
         api.subscriptions.getUserSubscription,
         { userId },
       );
+
+      if (!subscription) return;
 
       console.log("user subscription ", subscription);
 

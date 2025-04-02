@@ -30,23 +30,24 @@ export async function POST(req: Request) {
     const convex = getConvexClient();
 
     switch (event.type) {
-      case "checkout.session.completed":
+      case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-
         await handleSessionCompleted(session);
         break;
+      }
 
-      case "customer.subscription.created":
-        // const subscription = event.data.object as Stripe.Checkout.Session;
-
+      case "customer.subscription.created": {
         const subscription = await stripe.subscriptions.retrieve(
           event.data.object.id,
         );
 
-        console.log("subscription created metadata", subscription.metadata);
+        // event.data.object.subscription_data.id;
 
-        // const { orderNumber, customerName, customerEmail, clerkUserId } =
-        //   subscription.metadata;
+        if (!subscription.metadata.userId) {
+          throw new Error("User ID is missing in subscription metadata");
+        }
+
+        console.log("before try to create subscription in convex");
 
         const createdSub = await convex.mutation(
           api.subscriptions.createSubscription,
@@ -59,39 +60,61 @@ export async function POST(req: Request) {
               subscription.current_period_end * 1000,
             ),
             stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
+            status: subscription.status,
+            plan: subscription.items.data[0].price.nickname || "default",
           },
         );
 
-        console.log("created subscription id: ", createdSub);
+        console.log("🔥Created subscription:", createdSub);
         break;
+      }
 
-      case "customer.subscription.updated":
-        const updateSubscription = await stripe.subscriptions.retrieve(
+      case "customer.subscription.updated": {
+        // const subscription = await stripe.subscriptionSchedules.retrieve(
+        const subscription = await stripe.subscriptions.retrieve(
           event.data.object.id,
         );
+
+        if (!subscription.metadata.userId) {
+          throw new Error("User ID is missing in subscription metadata");
+        }
+
+        console.log("🔥before try to update subscription in convex");
+
         const updatedSub = await convex.mutation(
           api.subscriptions.updateSubscription,
           {
-            userId: updateSubscription.metadata.userId,
-            stripePriceId: updateSubscription.items.data[0].price.id,
+            userId: subscription.metadata.userId,
+            stripePriceId: subscription.items.data[0].price.id,
             stripeCurrentPeriodEnd: Math.floor(
-              updateSubscription.current_period_end * 1000,
+              subscription.current_period_end * 1000,
             ),
-            stripeCancelAtPeriodEnd: updateSubscription.cancel_at_period_end,
+            stripeCancelAtPeriodEnd: subscription.cancel_at_period_end,
+            status: subscription.status,
+            plan: subscription.items.data[0].price.nickname || "default",
           },
         );
-        console.log("updated subscription id: ", updatedSub);
-        break;
 
-      case "customer.subscription.deleted":
-        const deleteSub = await stripe.subscriptions.retrieve(
+        console.log("Updated subscription:", updatedSub);
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = await stripe.subscriptions.retrieve(
           event.data.object.id,
         );
+
+        if (!subscription.metadata.userId) {
+          throw new Error("User ID is missing in subscription metadata");
+        }
+
         await convex.mutation(api.subscriptions.deleteSubscription, {
-          userId: deleteSub.metadata.userId,
-          subscriptionId: deleteSub.id as Id<"subscriptions">,
+          userId: subscription.metadata.userId,
+          subscriptionId: subscription.id as Id<"subscriptions">,
         });
         break;
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
         break;

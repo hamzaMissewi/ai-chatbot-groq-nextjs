@@ -9,12 +9,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import type { IconType } from "react-icons/lib";
+import React from "react";
 
 interface ConfirmDialogProps {
   title?: string;
   description?: string;
   confirmText?: string;
   cancelText?: string;
+  ConfirmIcon?: React.ReactNode; // IconType | SVGSVGElement;
 }
 
 export const useConfirmDialog = ({
@@ -23,6 +26,7 @@ export const useConfirmDialog = ({
   //   description = "This action cannot be undone.",
   confirmText = "Confirm",
   cancelText = "Cancel",
+  ConfirmIcon,
 }: ConfirmDialogProps = {}) => {
   const [promise, setPromise] = useState<{
     resolve: (value: boolean) => void;
@@ -63,7 +67,10 @@ export const useConfirmDialog = ({
           <Button variant="outline" onClick={handleClose}>
             {cancelText}
           </Button>
-          <Button onClick={handleConfirm}>{confirmText}</Button>
+          <Button onClick={handleConfirm} className="flex items-center gap-1">
+            {/* {confirmText} {ConfirmIcon && <ConfirmIcon />} */}
+            {confirmText} {ConfirmIcon}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

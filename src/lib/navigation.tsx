@@ -18,7 +18,6 @@ export function NavigationProvider({
   children: React.ReactNode;
 }) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(true);
-
   const closeMobileNav = () => setIsMobileNavOpen(false);
 
   return (

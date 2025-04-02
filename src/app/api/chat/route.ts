@@ -35,26 +35,28 @@ import Groq from "groq-sdk";
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, msg, chatId, modelName } = (await request.json()) as {
+    const {
+      messages,
+      msg,
+      chatId,
+      modelName,
+    }: {
       chatId: Id<"chats">;
       msg: string;
       messages: MessageInputType[];
       modelName?: string;
-    };
+    } = await request.json();
+
+    const convex = getConvexClient();
+
     // HAMZA INIT
     // Create stream with larger queue strategy for better performance
     // const streamInit = new TransformStream({}, { highWaterMark: 1024 });
     // // const writer: WritableStreamDefaultWriter<Uint8Array> = streamInit.writable.getWriter();
     // const writer = streamInit.writable.getWriter();
-    // // // Send initial connection established message
+    // Send initial connection established message
     // await sendSSEMessage(writer, { type: StreamMessageType.Connected });
 
-    const convex = getConvexClient();
-
-    // Hamza
-    // const stream = new TransformStream({}, { highWaterMark: 1024 });
-    // const writer = stream.writable.getWriter();
-    //
     // const response = new Response(stream.readable, {
     //   headers: {
     //     "Content-Type": "text/event-stream",
@@ -64,39 +66,35 @@ export async function POST(request: NextRequest) {
     //   }
     // });
 
-    // await sendSSEMessage(writer, { type: StreamMessageType.Done });
+    // const createMessageInput: {
+    //   chatId: Id<"chats">;
+    //   content: string;
+    //   model?: string; // keyof typeof FreeLLModelsEnum;
+    // } = {
+    //   chatId: chatId, //as Id<"chats">,
+    //   content: msg,
+    //   model: modelName,
+    // };
 
-    const createMessageInput: {
-      chatId: Id<"chats">;
-      content: string;
-      model?: string; // keyof typeof FreeLLModelsEnum;
-    } = {
-      chatId: chatId as Id<"chats">,
+    await convex.mutation(api.messages.send, {
+      chatId: chatId, //as Id<"chats">,
       content: msg,
       model: modelName,
-      // getEnumKeyByValue(FreeLLModelsEnum, modelName)
-    };
-
-    await convex.mutation(api.messages.send, createMessageInput);
+    });
 
     // Safely handle undefined or null messages
     const processedMessages =
-      // messages && Array.isArray(messages)
       messages.length > 0
         ? messages.reduce((acc, m) => {
-            // if (m && m.parts && m.parts[0] && m.parts[0].text) {
             acc.push({
-              // role: m.role === "assistant" ? "system" : "user",
-              role: m.role === "user" ? "user" : "system",
+              role: m.role === "user" ? "user" : "assistant",
               content: m.content,
-              // role: m.getType() === "human" ? "user" : "system",
             });
             return acc;
           }, [] as MessageInputType[])
         : [];
 
     const enhancedMessages: MessageInputType[] = [
-      // { role: "assistant", content: SYSTEM_MESSAGE },
       { role: "system", content: SYSTEM_MESSAGE },
       ...processedMessages,
       { role: "user", content: msg },
@@ -105,6 +103,12 @@ export async function POST(request: NextRequest) {
     const groq = new Groq({
       apiKey: process.env.GROQ_API_KEY,
     });
+
+    // const dd = await openaiModel.invoke(messages[0]);
+    // const result = await streamText({
+    //   model: dd, // OpenAI's model that supports images
+    //   messages,
+    // });
 
     const stream = await groq.chat.completions.create({
       messages: enhancedMessages,
@@ -139,15 +143,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // const openaiModel = new ChatOpenAI({ model: "gpt-4o" });
-    // const dd = await openaiModel.invoke(messages[0]);
-    // const result = await streamText({
-    //   model: dd, // OpenAI's model that supports images
-    //   messages,
-    // });
     // return Response.json({ result }, { status: 200 });
-
-    return new Response(responseStream);
+    // return new Response(responseStream);
+    return responseStream;
   } catch (error: any) {
     console.error("Error in chat API:", error);
     return new Response(

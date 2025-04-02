@@ -65,7 +65,7 @@ export const NavigationButtons = ({ className }: { className?: string }) => {
     <div
       className={cn(
         "flex items-center focus:outline-none dark:text-[#00ff99]",
-        className || "fixed z-50 my-4 ml-5 gap-2",
+        // className || "fixed z-50 my-4 ml-5 gap-2",
       )}
     >
       {/* <div className={"group relative"}> */}
@@ -73,7 +73,7 @@ export const NavigationButtons = ({ className }: { className?: string }) => {
         onClick={() => handleNavigation("prev")}
         // disabled={isNavigating || !canGoBack}
         disabled={isNavigating}
-        className="rounded-full border bg-[#4A154B] text-white hover:bg-[#00ff99] hover:text-[#4A154B] dark:bg-transparent dark:hover:text-[#00ff99]"
+        className="rounded-full border bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground"
       >
         <MdNavigateBefore className="text-xl lg:text-2xl" />
       </button>
@@ -81,7 +81,7 @@ export const NavigationButtons = ({ className }: { className?: string }) => {
       <button
         onClick={() => handleNavigation("next")}
         disabled={isNavigating}
-        className="rounded-full border bg-[#4A154B] text-white hover:bg-[#00ff99] hover:text-[#4A154B] dark:bg-transparent dark:hover:text-[#00ff99]"
+        className="rounded-full border bg-primary text-primary-foreground hover:bg-accent hover:text-accent-foreground"
       >
         <MdNavigateNext className="text-xl lg:text-2xl" />
       </button>

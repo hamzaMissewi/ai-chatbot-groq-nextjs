@@ -1,8 +1,8 @@
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "@/components/ConvexClientProvider";
-import { Suspense } from "react";
-import { LoadingSpinner } from "@/components/Loading";
+// import { Suspense } from "react";
+// import { LoadingSpinner } from "@/components/Loading";
 
 const grotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -10,8 +10,8 @@ const grotesk = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "🚀Hamza AI Assistant🚀",
-  description: "A powerful AI assistant Langchain and different LLMs",
+  title: "Hamza AI Chatbot 🚀",
+  description: "A Powerful AI Advanced Chatbot Langchain And Different LLMs",
 };
 
 export default function RootLayout({
@@ -27,8 +27,9 @@ export default function RootLayout({
           <link rel="icon" href="/favicon.ico" sizes="any" />
         </head>
         {/* <Suspense fallback={<LoadingSpinner />}> */}
-        <body>{children}</body>
-        {/* </Suspense> */}
+        <body>
+          <main className="min-h-screen w-full">{children}</main>
+        </body>
       </html>
     </ConvexClientProvider>
     // </ConvexAuthNextjsServerProvider>

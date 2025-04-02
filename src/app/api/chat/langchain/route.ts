@@ -132,10 +132,12 @@ export async function POST(req: Request) {
           const langChainMessages = [
             ...messages
               .slice(0, messages.length - 1)
-              .map((msg: MessageInputType) =>
-                msg.role === "user"
-                  ? new HumanMessage(msg.content)
-                  : new AIMessage(msg.content),
+              .map(
+                (msg: MessageInputType) =>
+                  msg.content &&
+                  (msg.role === "user"
+                    ? new HumanMessage(msg.content)
+                    : new AIMessage(msg.content)),
               ),
             new HumanMessage(lastUserMessage),
           ];

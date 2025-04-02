@@ -9,7 +9,7 @@ export function ChatMessageBubble(props: {
   return (
     <div
       className={cn(
-        `mb-8 flex max-w-[80%] rounded-[24px]`,
+        `mb-8 flex rounded-[24px]`,
         props.message.role === "user"
           ? "bg-secondary px-4 py-2 text-secondary-foreground"
           : null,
@@ -23,7 +23,7 @@ export function ChatMessageBubble(props: {
       )}
 
       <div className="flex flex-col whitespace-pre-wrap">
-        <span>{props.message.content}</span>
+        {props.message?.content && <span>{props.message.content}</span>}
 
         {props.sources && props.sources.length ? (
           <>

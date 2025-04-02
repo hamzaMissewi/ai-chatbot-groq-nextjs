@@ -10,7 +10,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { GuideInfoBox } from "@/components/other/guide/GuideInfoBox";
 import { ChatInput, ChatLayout } from "@/components/other/ChatWindow";
 import { type Message } from "@langchain/langgraph-sdk";
-// import { AIMessage } from "@langchain/core/messages";
 
 const onError = (error: unknown) => {
   toast.error("Failed to handle input", {
@@ -124,7 +123,7 @@ function BranchPicker(props: {
   const index = props.branches.indexOf(props.current);
 
   return (
-    <div className="flex items-center justify-end gap-2 text-sm">
+    <div className="flex w-fit items-center justify-end gap-2 text-sm">
       <button
         type="button"
         className="flex-shrink-0"

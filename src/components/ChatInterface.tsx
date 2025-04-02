@@ -20,11 +20,10 @@ import {
 import { LoadingDots } from "@/components/Loading";
 import { useGetGroqModels } from "@/components/hooks/useGetGroqModels";
 import { cn } from "@/lib/cn";
-import { getEnumKeyByValue } from "@/lib/lib";
-import { Loader2 } from "lucide-react";
-import { ChatInput } from "./other/ChatWindow";
-
 // import { getEnumKeyByValue } from "@/lib/lib";
+// import { Loader2 } from "lucide-react";
+import { ChatInput } from "./other/ChatWindow";
+import { TbBrandOpenai } from "react-icons/tb";
 // import { modelEnum } from "@/convex/schema";
 
 // const formatToolOutput = (output: unknown): string => {
@@ -72,13 +71,19 @@ export const formatMessage = (content: string): string => {
 
 interface ChatInterfaceProps {
   chatId: Id<"chats">;
-  initialMessages: Doc<"messages">[];
+  initialMessages: MessageInputType[];
   chatTitle?: string;
 }
 
 function ChatInterface({
   chatId,
-  initialMessages,
+  initialMessages = [
+    {
+      role: "assistant",
+      content:
+        "Hello! I'm ready to assist you. What would you like to explore today ?",
+    },
+  ],
   chatTitle,
 }: ChatInterfaceProps) {
   // const [messages, setMessages] = useState([
@@ -91,7 +96,7 @@ function ChatInterface({
   const { groqModels } = useGetGroqModels();
   const convex = getConvexClient();
   const [messages, setMessages] = useState<MessageInputType[]>(initialMessages);
-  const [llmModel, setLlmModel] = useState<string | undefined>(undefined);
+  const [modelValue, setModelValue] = useState<string | undefined>(undefined);
 
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -115,11 +120,7 @@ function ChatInterface({
       ...messages,
       { role: "user", content: message },
       // { role: "assistant", content: "" }
-      // { role: "user", parts: [{ text: message }] },
-      // { role: "model", parts: [{ text: "" }] }
     ]);
-
-    // console.log("chatId", chatId);
 
     try {
       const response = await fetch("/api/chat", {
@@ -129,7 +130,8 @@ function ChatInterface({
           messages: [...messages],
           msg: message,
           chatId: chatId,
-          modelName: llmModel, //?.toString()
+          modelName: modelValue,
+          // modelName: getEnumKeyByValue(FreeLLModelsEnum, modelValue),
         }),
       });
 
@@ -143,23 +145,22 @@ function ChatInterface({
         while (true) {
           const { done, value } = await reader.read();
           const aiResponse = fullResponse.replace(/<think>|<\/think>/g, "");
+
           if (done) {
-            // console.log("full response", fullResponse);
-
-            setMessages((messages) => {
-              // const lastMessage = messages[messages.length - 1];
-              // const otherMessages = messages.slice(0, messages.length - 1);
-              return [...messages, { role: "assistant", content: aiResponse }];
-            });
-
-            await convex.mutation(api.messages.store, {
+            const storeResponseId = await convex.mutation(api.messages.store, {
               chatId,
               content: aiResponse,
               role: "assistant",
-              model:
-                getEnumKeyByValue(FreeLLModelsEnum, llmModel) ||
-                "deepseek_llama",
+              model: modelValue || FreeLLModelsEnum.deepseek_llama,
+              // getEnumKeyByValue(FreeLLModelsEnum, modelValue) || deepseek_llama
             });
+
+            if (storeResponseId) {
+              setMessages((messages) => [
+                ...messages,
+                { role: "assistant", content: aiResponse },
+              ]);
+            }
 
             break;
           }
@@ -170,16 +171,15 @@ function ChatInterface({
           fullResponse += text;
 
           setMessages((messages) => {
-            if (value.length === 1) {
+            // if (value.length === 1) {
+            if (value.length < 1) {
               return [...messages, { role: "assistant", content: aiResponse }];
             }
-
             const lastMessage = messages[messages.length - 1];
-            const otherMessages = messages.slice(0, messages.length - 1);
-
             lastMessage.content = aiResponse;
+
+            const otherMessages = messages.slice(0, messages.length - 1);
             return [...otherMessages, lastMessage];
-            // return [...messages, {role:"assistant", content:aiResponse}];
           });
         }
       }
@@ -191,8 +191,7 @@ function ChatInterface({
       setMessages((messages) => [
         ...messages,
         {
-          role: "assistant", //"model",
-          // parts: [{ text: "Apologies, an unexpected error occurred. Please try again." }]
+          role: "assistant",
           content: "Apologies, an unexpected error occurred. Please try again.",
         },
       ]);
@@ -201,43 +200,45 @@ function ChatInterface({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter") {
       e.preventDefault();
       sendMessage();
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center overflow-x-auto p-4">
-      <div className="w-full max-w-4xl rounded-2xl border border-[#3A3A3C] shadow-2xl">
-        <div className="flex flex-nowrap items-center justify-around space-x-4 rounded-lg bg-[#3A3A3C] p-3 md:p-5 lg:justify-between">
+    <div className="bottom-0 flex w-full flex-grow items-center justify-center overflow-auto">
+      <div className="w-full max-w-7xl rounded-2xl border border-[#3A3A3C] shadow-2xl">
+        <div className="mx-4 mt-20 flex flex-nowrap items-center justify-around space-x-4 rounded-lg bg-[#3A3A3C] p-3 md:p-5 lg:justify-between">
           <div className="flex flex-1 items-center gap-3 md:gap-4">
-            <div className="rounded-full bg-[#4A4A4C] p-2">
-              <Zap className="h-6 w-6 text-[#5E5CE6]" />
+            <div className="rounded-full p-2">
+              {/* <Zap className="h-6 w-6 text-[#5E5CE6]" /> */}
+              <TbBrandOpenai className={"size-6"} />
             </div>
             <h1 className="truncate text-xl font-bold uppercase text-white ring-offset-accent-foreground hover:animate-pulse hover:text-[#00ff99] focus:ring-1 focus:ring-ring md:text-2xl">
-              {/*Chat:*/}
               {/*{chatTitle || messages?.[0]?.content?.length > 0 ? messages[0].content?.split(/\n/g)[0] : "New Chat"}*/}
-              {chatTitle || messages.length > 0
-                ? messages[0].content.split(/\n/g)[0]
+              {chatTitle ||
+              // (messages.length > 0 && messages?.[0]?.content !== undefined)
+              (messages.length > 0 && messages[0]?.content !== undefined)
+                ? messages[0]?.content //?.split(/\n/g)[0]
                 : "New conversation"}
             </h1>
           </div>
 
           {/*SELECT*/}
           <div className={"flex flex-wrap items-center justify-end gap-2"}>
-            {llmModel && (
+            {modelValue && (
               <p className={"flex-1 truncate text-base text-white"}>
                 Selected Model
               </p>
             )}
             <Select
               defaultValue={FreeLLModelsEnum.deepseek_llama}
-              value={llmModel}
+              value={modelValue}
               onValueChange={(e) => {
                 // if (Object.values(FreeLLModelsEnum).includes(e as unknown as FreeLLModelsEnum)) {
-                setLlmModel(e);
-                // }
+                setModelValue(e);
               }}
             >
               <SelectTrigger className="w-fit space-x-2 font-semibold text-[#00ff99] hover:bg-[#00ff99] hover:text-black">
@@ -276,75 +277,103 @@ function ChatInterface({
           </div>
         </div>
 
-        <div className="flex h-[75vh] flex-1 flex-col items-center p-4 md:p-6">
-          <ScrollArea className="flex-grow space-y-4 pb-10">
+        <div className="top-20 flex h-[80vh] flex-1 flex-col items-center justify-center p-4 md:p-6">
+          <ScrollArea className="space-y-4 pb-10">
             {/*<div className="space-y-4">*/}
             {messages.map((message, index) => (
-              <div key={index} className={"w-full"}>
-                <ScrollArea
-                  className={`flex max-w-[90%] flex-grow items-start md:max-w-[85%] ${
-                    message.role === "user" ? "justify-end" : "justify-start"
+              <div key={index}>
+                <div
+                  className={`my-4 flex gap-3 ${
+                    message.role === "user"
+                      ? "flex-row-reverse items-center"
+                      : "flex-col"
                   }`}
-                  // className={`flex gap-3 max-w-[85%] md:max-w-[75%] ${
                 >
-                  <div
-                    className={`my-4 flex w-full gap-3 ${
-                      message.role === "user"
-                        ? "flex-row-reverse items-start"
-                        : "flex-col"
-                    }`}
-                  >
-                    {/* bg-[#3A3A3C]*/}
-                    <div className={"flex items-center space-x-2"}>
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-white",
-                          message.role === "user"
-                            ? "hover:bg-blue-200"
-                            : "hover:bg-amber-100",
-                        )}
-                      >
-                        {message.role === "user" ? (
-                          <User className="h-5 w-5 text-[#5E5CE6]" />
-                        ) : (
-                          <Bot className="h-5 w-5 text-[#5E5CE6]" />
-                        )}
-                      </div>
-                      {message.model && message.role === "assistant" && (
-                        <p className={"flex-1 truncate text-base text-white"}>
-                          Model{" "}
-                          <span
-                            className={"uppercase tracking-wide text-[#00ff99]"}
-                          >
-                            "{message.model.replace(/[_-]/g, " ")}"
-                          </span>
-                        </p>
+                  <div className={"flex items-center space-x-2"}>
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full bg-white",
+                        message.role === "user"
+                          ? "hover:bg-blue-200"
+                          : "hover:bg-amber-100",
+                      )}
+                    >
+                      {message.role === "user" ? (
+                        <User className="h-5 w-5 text-[#5E5CE6]" />
+                      ) : (
+                        <Bot className="h-5 w-5 text-[#5E5CE6]" />
                       )}
                     </div>
+                    {message.model && message.role === "assistant" && (
+                      <p className={"flex-1 truncate text-base text-white"}>
+                        Model{" "}
+                        <span
+                          className={"uppercase tracking-wide text-[#00ff99]"}
+                        >
+                          "{message.model.replace(/[_-]/g, " ")}"
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                  {/* <div
+                    //  md:max-w-[85%] w-[90%]
+                    className={`flex w-full flex-grow items-start gap-3 ${
+                      message.role === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    {message?.content !== "" && (
+                      // <ScrollArea className={"prose prose-invert max-w-none"}>
+                      <ReactMarkdown className={"w-full text-justify"}>
+                        {formatMessage(message.content)}
+                      </ReactMarkdown>
+                      //   <ScrollBar
+                      //     orientation={"horizontal"}
+                      //     className={"w-full"}
+                      //   />
+                      // </ScrollArea>
+                    )}
+                  </div> */}
+                  <div
+                    className={`rounded-2xl px-4 py-0 shadow-lg ${
+                      message.role === "user"
+                        ? "flex justify-end bg-[#5E5CE6] text-white"
+                        : "flex justify-start overflow-auto bg-[#3A3A3C] text-white"
+                    }`}
+                  >
+                    {/* <div className="prose prose-invert max-w-none">
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: formatMessage(message.content),
+                        }}
+                      />
+                    </div> */}
+
                     <div
-                      className={`flex-grow rounded-2xl px-4 py-0 shadow-lg ${
+                      //  md:max-w-[85%] w-[90%]
+                      className={`flex w-full flex-grow items-start gap-3 ${
                         message.role === "user"
-                          ? "max-w-[70%] bg-[#5E5CE6] text-white"
-                          : "overflow-x-auto bg-[#3A3A3C] text-white"
+                          ? "justify-end"
+                          : "justify-start"
                       }`}
                     >
-                      {/*<div className="prose prose-invert max-w-none">*/}
-                      {/*<ReactMarkdown>{message.parts[0].text}</ReactMarkdown>*/}
-                      <ScrollArea className={"prose prose-invert max-w-none"}>
+                      {message?.content !== "" && (
+                        // <ScrollArea className={"prose prose-invert max-w-none"}>
                         <ReactMarkdown className={"w-full text-justify"}>
                           {formatMessage(message.content)}
                         </ReactMarkdown>
-                        <ScrollBar
-                          orientation={"horizontal"}
-                          className={"w-full"}
-                        />
-                      </ScrollArea>
-                      {/*<div dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }} />*/}
-                      {/*</div>*/}
+                        //   <ScrollBar
+                        //     orientation={"horizontal"}
+                        //     className={"w-full"}
+                        //   />
+                        // </ScrollArea>
+                      )}
+                      {/* <ScrollBar
+                        orientation={"horizontal"}
+                        className={"w-[60%]"}
+                      /> */}
                     </div>
                   </div>
-                  <ScrollBar orientation={"horizontal"} className={"w-[60%]"} />
-                </ScrollArea>
+                </div>
               </div>
             ))}
             <div ref={messagesEndRef} />
@@ -352,7 +381,7 @@ function ChatInterface({
             <ScrollBar orientation={"vertical"} />
           </ScrollArea>
 
-          <div className="mt-auto flex w-[100%] flex-wrap items-center justify-center gap-3">
+          <div className="mt-auto flex w-full flex-wrap items-center justify-center gap-3">
             {/* TODO */}
             <ChatInput
               value={message}
@@ -360,8 +389,8 @@ function ChatInterface({
               onSubmit={(e) => {
                 e.preventDefault();
                 sendMessage();
-                // onEdit({ type: "human", content: editValue });
               }}
+              onKeyPress={handleKeyPress}
               actions={
                 <Button
                   variant="outline"

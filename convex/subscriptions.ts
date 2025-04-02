@@ -10,16 +10,18 @@ export const createSubscription = mutation({
     stripePriceId: v.optional(v.string()),
     stripeCurrentPeriodEnd: v.optional(v.number()),
     stripeCancelAtPeriodEnd: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    plan: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // const user = await ctx.auth.getUserIdentity();
-    // if (!user) {
-    //   throw new Error("Unauthorized Hamza");
-    // }
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
 
     const createSub = await ctx.db.insert("subscriptions", {
       ...args,
-      userId: args.userId,
+      // userId: args.userId,
       createdAt: Date.now(),
     });
 
@@ -29,33 +31,38 @@ export const createSubscription = mutation({
 
 export const updateSubscription = mutation({
   args: {
+    // subId: v.id("subscription"),
     userId: v.string(),
     stripeCurrentPeriodEnd: v.optional(v.number()),
     stripeCancelAtPeriodEnd: v.optional(v.boolean()),
     stripePriceId: v.optional(v.string()),
+    status: v.optional(v.string()),
+    plan: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // const user = await ctx.auth.getUserIdentity();
-    // if (!user) {
-    //   throw new Error("Unauthorized");
-    // }
-
-    // TODO
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthorized");
+    }
 
     const subscription = await ctx.db
       .query("subscriptions")
+      // .withIndex("by_id", (q) => q.eq(q.field("id"), args.subId))
       .filter((q) => q.eq(q.field("userId"), args.userId))
       .unique();
 
     if (!subscription) {
       console.error("Subscription not found");
-      return null
+      return null;
     }
 
     await ctx.db.patch(subscription._id, {
-      //   ...args,
       stripeCurrentPeriodEnd: args.stripeCurrentPeriodEnd,
       stripeCancelAtPeriodEnd: args.stripeCancelAtPeriodEnd,
+      stripePriceId: args.stripePriceId,
+      status: args.status,
+      plan: args.plan,
+      // updatedAt: Date.now()
     });
 
     return subscription._id;
@@ -65,8 +72,8 @@ export const updateSubscription = mutation({
 export const deleteSubscription = mutation({
   args: { subscriptionId: v.id("subscriptions"), userId: v.string() },
   handler: async (ctx, args) => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
       throw new Error("Unauthorized");
     }
 
@@ -91,6 +98,10 @@ export const deleteSubscription = mutation({
 export const getUserSubscription = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
+    // const identity = await ctx.auth.getUserIdentity();
+    // if (!identity) {
+    //   throw new Error("Unauthorized");
+    // }
     const subscription = await ctx.db
       .query("subscriptions")
       .filter((q) => q.eq(q.field("userId"), args.userId))

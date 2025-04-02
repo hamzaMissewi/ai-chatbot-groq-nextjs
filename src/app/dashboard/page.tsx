@@ -1,6 +1,5 @@
 "use client";
 import { ArrowLeft, ArrowRight, BotIcon } from "lucide-react";
-import CreateChatDialog from "@/components/CreateChatModal";
 import { useState } from "react";
 // import { api } from "@/convex/_generated/api";
 import {
@@ -25,8 +24,8 @@ import {
   useAuth,
 } from "@clerk/nextjs";
 import { useSubscriptionStatus } from "@/hooks/useSubscriptionStatus";
-import { toast } from "sonner";
 import { useCreateChat } from "@/components/convex/useCreateChat";
+// import { toast } from "sonner";
 
 const DashboardPage = () => {
   const [openModels, setOpenModels] = useState(false);
@@ -35,12 +34,16 @@ const DashboardPage = () => {
   const userLevel = useSubscriptionStatus();
   // const [userLevel, setUserLevel] = useState<SubscriptionLevel>("free");
   const { ConfirmDialog, confirm } = useConfirmDialog({
-    title: "Are you sure you want to go back ?",
+    // title: "Are you sure you want to go back ?",
+    title: "Confirm ?",
+    ConfirmIcon: (
+      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+    ),
   });
 
   const { userId } = useAuth();
   const { mutate: createChat } = useCreateChat();
-  const [openDialog, setOpenDialog] = useState(false);
+  // const [openDialog, setOpenDialog] = useState(false);
 
   const handleNewChat = async () => {
     if (!userId) {
@@ -62,7 +65,6 @@ const DashboardPage = () => {
   //     const subs = await getUserSubscriptionLevel(userId);
   //     setUserLevel(subs);
   //   }
-
   //   checkUserSubs();
   // }, [userId]);
 
@@ -73,14 +75,25 @@ const DashboardPage = () => {
   return (
     <>
       <ConfirmDialog />
-      <div className="flex h-full flex-1 items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl">
+      <div className="flex h-[calc(100vh-72px)] items-center justify-center overflow-auto px-4">
+        <div className="relative w-full max-w-3xl">
           {/* Decorative elements */}
           {/* <div className="absolute inset-0 -z-10 rounded-3xl bg-gradient-to-r from-gray-100 to-gray-50/50"></div> */}
           <div className="absolute inset-0 -z-10 rounded-3xl bg-[linear-gradient(to_right,#f5f5f5_1px,transparent_1px),linear-gradient(to_bottom,#f5f5f5_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
-          <div className="relative space-y-8 bg-white/40 p-8 text-center md:mb-20">
-            <div className="space-y-4 rounded-2xl bg-white/70 p-6 shadow-sm ring-1 ring-gray-200/50 backdrop-blur-sm">
+          {/* <div className="relative 
+          w-full flex-1 items-center 
+          justify-center space-y-8 
+          justify-self-center bg-white/
+          40 p-8 text-center md:mb-20">
+            <div className="space-y-4 
+            rounded-2xl bg-white/70 p-6 
+            shadow-sm ring-1 
+            ring-gray-200/50 
+            backdrop-blur-sm"></div> */}
+
+          <div className="relative mx-auto w-full space-y-8 rounded-3xl bg-white/40 p-8 text-center backdrop-blur-sm">
+            <div className="space-y-4 rounded-2xl bg-white/70 p-6 shadow-sm ring-1 ring-gray-200/50">
               <div className="inline-flex rounded-xl bg-gradient-to-b from-gray-50 to-white p-4">
                 <BotIcon className="h-12 w-12 text-gray-600" />
               </div>
@@ -109,9 +122,15 @@ const DashboardPage = () => {
 
               {/* <ClerkProvider> */}
               <SignedOut>
-                <div className="flex items-center justify-center">
-                  <SignInButton mode="redirect" />
-                  <SignUpButton mode="redirect" />
+                <div className="flex items-center justify-center gap-5">
+                  <SignInButton mode="redirect">
+                    <span className="inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-lg rounded-md border border-black p-1 text-base text-sm font-medium text-black transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+                      Sign In
+                    </span>
+                  </SignInButton>
+                  <SignUpButton mode="redirect">
+                    <span className="text-base text-black">Sign Up</span>
+                  </SignUpButton>
                 </div>
               </SignedOut>
 

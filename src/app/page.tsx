@@ -1,29 +1,31 @@
 "use client";
 import { GlobalNavbar } from "@/components/HeaderGlobal";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
+import { SignedIn, SignedOut, SignInButton, useAuth } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 // import { Authenticated } from "convex/react";
 
 export default function LandingPage() {
+  const { isSignedIn } = useAuth();
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white to-gray-50/50">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-b from-[#fff] to-gray-50/50">
       {/* Background pattern */}
-      <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)] bg-[size:6rem_4rem]" />
+      <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)] bg-[size:6rem_4rem]" />
 
       <section className="mx-auto flex w-full max-w-7xl flex-col items-center space-y-10 text-center">
         {/* Hero content */}
         <header className="space-y-6">
-          <h1 className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text pb-2 text-5xl font-bold tracking-tight text-transparent sm:text-7xl">
+          <h1 className="bg-gradient-to-r from-gray-900 via-gray-700 to-gray-900 bg-clip-text pb-2 text-5xl font-bold tracking-tight text-transparent sm:text-7xl">
             Hamza AI Assistant
           </h1>
           <p className="max-w-[600px] text-lg text-gray-600 md:text-xl/relaxed xl:text-2xl/relaxed">
-            Meet your new AI chat companion that goes beyond conversation - it
-            can actually get things done!
+            Meet Hamza AI chat assistant that goes beyond conversation - it can
+            actually get things done!
             <br />
             <span className="text-sm text-gray-400">
               {/*Powered by IBM&apos;s WxTools & your favourite LLM&apos;s.*/}
-              Powered by Hamza Missaoui
+              Powered by Hamza Missaoui, IBM Wxflows and LLMs
               {/* and list of LLM&apos;s. */}
             </span>
           </p>
@@ -32,29 +34,26 @@ export default function LandingPage() {
         <GlobalNavbar />
 
         {/* CTA Button */}
-        <SignedIn>
+        {/* <SignedIn> */}
+        {isSignedIn ? (
           <Link href="/dashboard">
-            <button className="group relative flex items-center justify-center rounded-full bg-gradient-to-r from-gray-900 to-gray-800 px-8 py-3.5 text-base font-medium text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:from-gray-800 hover:to-gray-700 hover:shadow-xl">
+            <Button className="group relative flex items-center justify-center rounded-full bg-white px-8 py-3.5 text-base font-medium text-black shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-gradient-to-r hover:from-gray-800 hover:to-gray-900 hover:text-white hover:shadow-xl">
               Get Started
-              <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-0.5" />
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gray-900/20 to-gray-800/20 opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
-            </button>
+            </Button>
           </Link>
-        </SignedIn>
-
-        <SignedOut>
-          <SignInButton
-            mode="modal"
-            fallbackRedirectUrl={"/dashboard"}
-            // forceRedirectUrl={"/dashboard"}
-          >
+        ) : (
+          // <SignedOut>
+          <SignInButton mode="modal" fallbackRedirectUrl={"/dashboard"}>
             <button className="group relative flex items-center justify-center rounded-full bg-gradient-to-r from-gray-900 to-gray-800 px-8 py-3.5 text-base font-medium text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:from-gray-800 hover:to-gray-700 hover:shadow-xl">
               Sign Up
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-gray-900/20 to-gray-800/20 opacity-0 blur-xl transition-opacity group-hover:opacity-100" />
             </button>
           </SignInButton>
-        </SignedOut>
+          // </SignedOut>
+        )}
 
         {/* Features grid */}
         <div className="mx-auto grid max-w-3xl grid-cols-1 gap-8 pt-8 md:grid-cols-3 md:gap-16">

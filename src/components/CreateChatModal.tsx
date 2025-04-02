@@ -2,7 +2,7 @@ import { Dialog } from "@radix-ui/react-dialog";
 import { PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useState } from "react";
-import { toast } from "sonner";
+// import { toast } fom "sonner";
 import { Button } from "./ui/button";
 import {
   DialogContent,
@@ -11,20 +11,19 @@ import {
   DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
-import { useCreateChat } from "@/components/convex/useCreateChat";
+// import { useCreateChat } from "@/components/convex/useCreateChat";
 import { useAuth } from "@clerk/nextjs";
-// import { useMutation } from "convex/react";
-// import { api } from "@/convex/_generated/api";
+import { useMutation } from "convex/react";
+import { api } from "@/convex/_generated/api";
 
 function CreateChatDialog({ children }: { children?: React.ReactNode }) {
-  //   const [isPending, setIsPending] = useState(false);
-  //   const createChat = useMutation(api.chats.createChat);
   const router = useRouter();
-  const { isPending, mutate: createChat } = useCreateChat();
+  const [isPending, setIsPending] = useState(false);
+  const createChat = useMutation(api.chats.createChat);
+  // const { isPending, mutate: createChat } = useCreateChat();
   const [openDialog, setOpenDialog] = useState(false);
   const [title, setTitle] = useState("");
   const { isSignedIn } = useAuth();
-  // const createChat = useMutation(api.chats.createChat);
 
   const handleClose = () => {
     setOpenDialog(false);
@@ -35,11 +34,16 @@ function CreateChatDialog({ children }: { children?: React.ReactNode }) {
       router.push("/sign-in");
       return;
     }
-    const chatId = await createChat({ title: title });
-    if (chatId) {
-      setOpenDialog(false);
-      // toast.success(`Create new chat successfully with title ${title}`);
-      router.push(`/dashboard/chat/${chatId}`);
+    setIsPending(true);
+    try {
+      const chatId = await createChat({ title });
+      if (chatId) {
+        setOpenDialog(false);
+        // toast.success(`Create new chat successfully with title ${title}`);
+        router.push(`/dashboard/chat/${chatId}`);
+      }
+    } finally {
+      setIsPending(false);
     }
   }, []);
 
@@ -71,7 +75,7 @@ function CreateChatDialog({ children }: { children?: React.ReactNode }) {
           <Button
             type="button"
             variant={"outline"}
-            className="rounded-xl border border-green-600 text-black shadow-md hover:bg-green-600 hover:text-gray-100 hover:shadow-green-600"
+            className="rounded-xl border border-green-600 text-white shadow-md hover:bg-green-600 hover:text-gray-100 hover:shadow-green-600"
             disabled={isPending || title === ""}
             onClick={handleNewChat}
           >
@@ -80,7 +84,7 @@ function CreateChatDialog({ children }: { children?: React.ReactNode }) {
           <Button
             onClick={handleClose}
             variant={"outline"}
-            className="rounded-xl border border-red-600 text-black shadow-md hover:bg-red-600 hover:text-gray-100 hover:shadow-red-600"
+            className="rounded-xl border border-red-600 text-white shadow-md hover:bg-red-600 hover:text-gray-100 hover:shadow-red-600"
           >
             Cancel
           </Button>

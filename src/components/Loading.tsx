@@ -43,18 +43,20 @@ export function LoadingSpinner({
       {spinner ? (
         <div
           className={`animate-spin h-${width || 16} w-${height || 16} rounded-full border-4 border-t-4 border-gray-200 border-b-yellow-500 border-l-red-500 border-r-green-500 border-t-blue-500`}
+          style={{
+            background:
+              "conic-gradient(from 0deg, #3b82f6, #10b981, #eab308, #ef4444, #3b82f6)",
+            border: "4px solid transparent",
+          }}
         ></div>
       ) : (
         text && (
           <p className={"dark:text-accent_green text-lg font-semibold"}>
-            {/*{text || 'Loading'}...*/}
-            {text}...
+            {text || "Loading"}...
           </p>
         )
       )}
-      {/*<div*/}
-      {/*  className={`h-${width || 34} w-${height || 34} animate-spin rounded-full border-b-2 border-t-2 border-white bg-accent_green-hover`}*/}
-      {/*></div>*/}
+      {/*<div className={`h-${width || 34} w-${height || 34} animate-spin rounded-full border-b-2 border-t-2 border-white bg-accent_green-hover`}></div>*/}
 
       {/* {spinner && (*/}
       {/*  <div*/}

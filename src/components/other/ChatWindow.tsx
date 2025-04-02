@@ -129,7 +129,6 @@ export function ChatWindow(props: {
             !!responseMessage.toolInvocations?.length) ||
           // !!responseMessage.parts?.length) ||
           responseMessage.role === "tool"
-          // responseMessage.role === "data"
         );
       },
     );
@@ -149,7 +148,6 @@ export function ChatWindow(props: {
     }
     const newMessages = messagesWithUserReply;
     for (const message of intermediateStepMessages) {
-      // newMessages.push({ ...message, parts: [] });
       newMessages.push(message);
       chat.setMessages([...newMessages]);
       await new Promise((resolve) =>
@@ -276,17 +274,20 @@ export function ChatInput(props: {
           <div className="flex gap-3">{props.children}</div>
 
           <div className="flex gap-2 self-end">
-            {props.actions}
-            <Button type="submit" className="self-end" disabled={disabled}>
-              {props.loading ? (
-                <span role="status" className="flex justify-center">
-                  <LoaderCircle className="animate-spin" />
-                  <span className="sr-only">Loading...</span>
-                </span>
-              ) : (
-                <span>Send</span>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">{props.actions}</div>
+
+              <Button type="submit" className="self-end" disabled={disabled}>
+                {props.loading ? (
+                  <span role="status" className="flex justify-center">
+                    <LoaderCircle className="animate-spin" />
+                    <span className="sr-only">Loading...</span>
+                  </span>
+                ) : (
+                  <span>Send</span>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -296,7 +297,7 @@ export function ChatInput(props: {
 
 export function ChatLayout(props: { content: ReactNode; footer: ReactNode }) {
   return (
-    <StickToBottom>
+    <StickToBottom className="h-full w-full gap-2 border">
       <StickyToBottomContent
         className="absolute inset-0"
         contentClassName="py-8 px-2"

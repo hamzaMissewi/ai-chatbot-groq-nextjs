@@ -1,5 +1,6 @@
 "use client";
-import { useCreateUser } from "@/components/convex/useCreateUser";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { SignUp } from "@clerk/nextjs";
 
 export default function Page() {
@@ -7,8 +8,17 @@ export default function Page() {
 
   return (
     <main className="flex min-h-screen items-center justify-center p-3">
-      {/* {isCreating && <Loader} */}
-      <SignUp path="/sign-up" />
+      <div className="flex flex-col items-center gap-4">
+        <SignUp path="/sign-up" />
+
+        <Link
+          href="/"
+          // className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-1 text-sm"
+        >
+          <ArrowLeft className="h-4 w-4" /> Go Back
+        </Link>
+      </div>
     </main>
   );
 }
